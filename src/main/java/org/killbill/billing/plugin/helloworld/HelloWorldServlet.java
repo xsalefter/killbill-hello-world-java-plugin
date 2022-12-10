@@ -20,24 +20,33 @@
 package org.killbill.billing.plugin.helloworld;
 
 import java.util.Optional;
+
+import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Singleton;
 
 import org.jooby.mvc.GET;
 import org.jooby.mvc.Local;
 import org.jooby.mvc.Path;
+import org.killbill.billing.osgi.bundles.logger.KillbillLogWriter;
+import org.killbill.billing.osgi.bundles.logger.KillbillLoggerFactory;
 import org.killbill.billing.tenant.api.Tenant;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import org.osgi.service.log.LogService;
+import org.osgi.service.log.Logger;
 
 @Singleton
 @Path("/")
 public class HelloWorldServlet {
 
-    private static final Logger logger = LoggerFactory.getLogger(HelloWorldServlet.class);
+    private static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(HelloWorldServlet.class);
 
-    public HelloWorldServlet() {
+    private final LogService logService;
+    private final Logger osgiLogger;
+
+    @Inject
+    public HelloWorldServlet(final KillbillLoggerFactory killbillLoggerFactory, final KillbillLogWriter killbillLogWriter) {
+        this.logService = killbillLogWriter;
+        this.osgiLogger = killbillLoggerFactory.getLogger(HelloWorldServlet.class);
     }
 
     /**
@@ -47,14 +56,17 @@ public class HelloWorldServlet {
     @GET
     public void hello(@Local @Named("killbill_tenant") final Optional<Tenant> tenant) {
         // Find me on http://127.0.0.1:8080/plugins/hello-world-plugin
-        logger.info("Hello world");
+        logger.info(">>> Hello world from native logback");
+        logService.log(LogService.LOG_INFO, ">>> Hello world from 'logService'");
+        osgiLogger.info(">>> Hello world from 'loggerFactory'");
+
         if(tenant != null && tenant.isPresent() ) {
-        	logger.info("tenant is available");
-        	Tenant t1 = tenant.get();
-        	logger.info("tenant id:"+t1.getId());
+        	logger.info(">>> tenant is available");
+        	final Tenant t1 = tenant.get();
+        	logger.info(">>> tenant id:"+t1.getId());
         }
         else {
-        	logger.info("tenant is not available");
+        	logger.info(">>> tenant is not available");
         }
     }
 }

@@ -36,6 +36,10 @@ import org.killbill.billing.plugin.core.config.PluginEnvironmentConfig;
 import org.killbill.billing.plugin.core.resources.jooby.PluginApp;
 import org.killbill.billing.plugin.core.resources.jooby.PluginAppBuilder;
 import org.osgi.framework.BundleContext;
+import org.osgi.framework.ServiceReference;
+import org.osgi.service.log.LogService;
+import org.osgi.service.log.Logger;
+import org.osgi.service.log.LoggerFactory;
 
 public class HelloWorldActivator extends KillbillActivatorBase {
 
@@ -74,15 +78,23 @@ public class HelloWorldActivator extends KillbillActivatorBase {
         final Healthcheck healthcheck = new HelloWorldHealthcheck();
         registerHealthcheck(context, healthcheck);
 
+        // Logger testing
+        final LoggerFactory loggerFactory = registerAndGetLoggerFactory(context);
+        final Logger logger = loggerFactory.getLogger(context.getBundle(), HelloWorldActivator.class.getName(), Logger.class);
+        logger.info(">>> Log comes from OSGI LoggerFactory in HelloWorldActivator");
+
+        final LogService logService = registerAndGetLogService(context);
+        logService.log(LogService.LOG_INFO, ">>> Log comes from OSGI LoggerService in HelloWorldActivator");
+
         // Register a servlet (optional)
-        final PluginApp pluginApp = new PluginAppBuilder(PLUGIN_NAME,
-                                                         killbillAPI,
-                                                         dataSource,
-                                                         super.clock,
-                                                         configProperties).withRouteClass(HelloWorldServlet.class)
-                                                                          .withRouteClass(HelloWorldHealthcheckServlet.class)
-                                                                          .withService(healthcheck)
-                                                                          .build();
+        final PluginApp pluginApp = new PluginAppBuilder(PLUGIN_NAME, killbillAPI, dataSource, clock, configProperties)
+                .withRouteClass(HelloWorldServlet.class)
+                .withRouteClass(HelloWorldHealthcheck.class)
+                .withService(healthcheck)
+                .withService(loggerFactory)
+                .withService(logService)
+                .build();
+
         final HttpServlet httpServlet = PluginApp.createServlet(pluginApp);
         registerServlet(context, httpServlet);
 
@@ -119,5 +131,41 @@ public class HelloWorldActivator extends KillbillActivatorBase {
         final Hashtable<String, String> props = new Hashtable<String, String>();
         props.put(OSGIPluginProperties.PLUGIN_NAME_PROP, PLUGIN_NAME);
         registrar.registerService(context, Healthcheck.class, healthcheck, props);
+    }
+
+    private LoggerFactory registerAndGetLoggerFactory(final BundleContext context) {
+        final Hashtable<String, String> props = new Hashtable<>();
+        props.put(OSGIPluginProperties.PLUGIN_NAME_PROP, PLUGIN_NAME);
+
+        final ServiceReference<LoggerFactory> srLoggerFactory = context.getServiceReference(LoggerFactory.class);
+        if (srLoggerFactory == null) {
+            throw new RuntimeException("Cannot find ServiceReference<LoggerFactory>. Perhaps killbill's default osgi-logger not registered properly?");
+        }
+        final LoggerFactory loggerFactory = context.getService(srLoggerFactory);
+        if (loggerFactory == null) {
+            throw new RuntimeException("Cannot find loggerFactory. Perhaps killbill's default osgi-logger not registered properly?");
+        }
+
+        registrar.registerService(context, LoggerFactory.class, loggerFactory, props);
+
+        return loggerFactory;
+    }
+
+    private LogService registerAndGetLogService(final BundleContext context) {
+        final Hashtable<String, String> props = new Hashtable<>();
+        props.put(OSGIPluginProperties.PLUGIN_NAME_PROP, PLUGIN_NAME);
+
+        final ServiceReference<LogService> srLogService = context.getServiceReference(LogService.class);
+        if (srLogService == null) {
+            throw new RuntimeException("Cannot find ServiceReference<LogService>. Perhaps killbill's default osgi-logger not registered properly?");
+        }
+        final LogService logService = context.getService(srLogService);
+        if (logService == null) {
+            throw new RuntimeException("Cannot find logService. Perhaps killbill's default osgi-logger not registered properly?");
+        }
+
+        registrar.registerService(context, LogService.class, logService, props);
+
+        return logService;
     }
 }

@@ -22,7 +22,7 @@
     <parent>
         <groupId>org.kill-bill.billing</groupId>
         <artifactId>killbill-oss-parent</artifactId>
-        <version>0.145.3-c9eb563-SNAPSHOT</version>
+        <version>0.145.3-SNAPSHOT</version>
     </parent>
     <groupId>org.kill-bill.billing.plugin.java</groupId>
     <artifactId>hello-world-plugin</artifactId>
@@ -48,6 +48,7 @@
         <check.skip-enforcer>true</check.skip-enforcer>
         <check.skip-rat>true</check.skip-rat>
         <check.skip-spotbugs>true</check.skip-spotbugs>
+        <osgi.extra-import>org.killbill.billing.osgi.bundles.logger;version=${killbill-platform.version}</osgi.extra-import>
         <osgi.private>org.killbill.billing.plugin.helloworld.*</osgi.private>
     </properties>
     <dependencies>
@@ -102,6 +103,11 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
+            <groupId>org.kill-bill.billing</groupId>
+            <artifactId>killbill-platform-osgi-bundles-logger</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
             <groupId>org.kill-bill.billing.plugin</groupId>
             <artifactId>killbill-plugin-api-notification</artifactId>
             <scope>provided</scope>
@@ -128,6 +134,12 @@
         <dependency>
             <groupId>org.kill-bill.commons</groupId>
             <artifactId>killbill-metrics-api</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.osgi</groupId>
+            <artifactId>org.osgi.service.log</artifactId>
+            <version>1.5.0</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
